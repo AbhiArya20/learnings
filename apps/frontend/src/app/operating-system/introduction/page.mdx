@@ -12,23 +12,74 @@ An operating system(OS) is a low level <HoverCardMDX trigger={"system software"}
 
 #### Functions of an Operating System
 
-- ** Memory Management **: The Operating System manages memory allocation, deallocation to various process and provides memory isolation.  
-{/* 
-The operating system manages the Primary Memory or Main Memory. Main memory is made up of a large array of bytes or words where each byte or word is assigned a certain address. Main memory is fast storage and it can be accessed directly by the CPU. For a program to be executed, it should be first loaded in the main memory. An operating system manages the allocation and deallocation of memory to various processes and ensures that the other process does not consume the memory allocated to one process. An Operating System performs the following activities for Memory Management:
+- **Memory Management**: The Operating System manages <HoverCardMDX trigger={"memory allocation and deallocation"}>
+    The operating system keeps track of memory(main/primary/RAM), monitoring which memory addresses have already been allocated to processes and which memory addresses are free and not yet been use.<br /><br />The OS decide the order in which processes are granted memory access and for how long. It allocate memory to a process when process requests it and deallocates when the process has terminates or is performing an I/O operation.</HoverCardMDX> to various process and provides <HoverCardMDX trigger={"memory isolation"}>The operating system ensures that one process does not interfere with or modify the memory allocated to another process.</HoverCardMDX>.
 
-It keeps track of primary memory, i.e., which bytes of memory are used by which user program. The memory addresses that have already been allocated and the memory addresses of the memory that has not yet been used. 
-In multiprogramming, the OS decides the order in which processes are granted memory access, and for how long. 
-It Allocates the memory to a process when the process requests it and deallocates the memory when the process has terminated or is performing an I/O operation.  */}
+- **Process Management**: The Operating System 
+
+{/* Process Management in an Operating System (OS) involves handling the creation, scheduling, and termination of processes. A process is a program in execution, and the OS is responsible for ensuring that processes are executed efficiently while managing system resources effectively. Below is an overview of the key components of process management in an OS:
+
+1. Process Creation
+Forking or Spawning: A new process is created using system calls like fork() in Unix/Linux or CreateProcess() in Windows. When a process is created, the OS allocates necessary resources like memory, CPU time, and I/O devices.
+Process Control Block (PCB): Every process has a data structure called a Process Control Block that holds all the essential information about the process, such as its ID, state, priority, program counter, memory limits, and I/O status.
+2. Process Scheduling
+Scheduler: The OS uses a scheduler to determine which process runs at any given time. Scheduling algorithms like First-Come, First-Served (FCFS), Shortest Job First (SJF), Round Robin (RR), and Priority Scheduling are used to decide the order of process execution.
+Context Switching: When the CPU switches from one process to another, a context switch occurs, where the state of the current process is saved, and the state of the next process is loaded.
+3. Process States
+New: The process is being created.
+Ready: The process is ready to run but waiting for CPU time.
+Running: The process is currently being executed by the CPU.
+Waiting (Blocked): The process is waiting for some event (e.g., I/O completion or resource availability).
+Terminated: The process has finished execution.
+4. Inter-Process Communication (IPC)
+Processes often need to communicate with each other. The OS provides mechanisms for Inter-Process Communication (IPC), which can be:
+Pipes: A unidirectional communication channel.
+Message Queues: Allows processes to send and receive messages.
+Shared Memory: Allows multiple processes to share a memory space.
+Semaphores: Used to synchronize process execution and prevent conflicts.
+5. Process Synchronization
+Race Conditions: When multiple processes access shared data concurrently, the OS must prevent inconsistent states.
+Locks: To prevent race conditions, the OS uses locks (e.g., mutexes) to ensure that only one process can access a critical section of code at a time.
+Deadlock: The OS must handle situations where processes are waiting indefinitely for each other, thus preventing the system from becoming stuck in a deadlock state.
+6. Process Termination
+A process terminates when it completes its execution or when an error occurs. The OS reclaims the resources associated with the process, such as memory, I/O devices, and the process's PCB.
+Exit Status: A process typically provides an exit status code to indicate success or failure upon termination.
+7. Zombie and Orphan Processes
+Zombie Process: A process that has finished execution but still has an entry in the process table because its parent hasn't read its exit status yet.
+Orphan Process: A process whose parent has terminated but continues to run. These processes are usually adopted by the init process (or a similar system process).
+8. Multitasking and Multi-threading
+Multitasking: The OS can execute multiple processes seemingly simultaneously, switching between them rapidly (in time-sharing systems). This gives the illusion of parallel execution on single-core systems.
+Multithreading: A process can have multiple threads, and the OS manages the execution of these threads to achieve efficient multitasking within the same process.
+Summary:
+Process management in an OS involves creating, scheduling, and terminating processes, along with managing their states and resources. It ensures that processes execute efficiently and that they do not interfere with each other, providing mechanisms for synchronization, communication, and handling resource contention. The OS must also handle issues like deadlock, race conditions, and context switching to ensure smooth and reliable execution of processes. */}
 
 
-- ** Process Management **: The Operation System 
+
+
 
 {/* In a multi-programming environment, the OS decides the order in which processes have access to the processor, and how much processing time each process has. This function of OS is called Process Scheduling. An Operating System performs the following activities for Processor Management. 
 
 An operating system manages the processor’s work by allocating various jobs to it and ensuring that each process receives enough time from the processor to function properly.
 Keeps track of the status of processes. The program which performs this task is known as a traffic controller. Allocates the CPU that is a processor to a process. De-allocates processor when a process is no longer required. */}
 
-- ** Device Management **:
+
+
+
+
+
+
+
+
+{/* The operating system manages the Primary Memory or Main Memory. Main memory is made up of a large array of bytes or words where each byte or word is assigned a certain address. Main memory is fast storage and it can be accessed directly by the CPU. For a program to be executed, it should be first loaded in the main memory. 
+
+It keeps track of primary memory, i.e., which bytes of memory are used by which user program. The memory addresses that have already been allocated and the memory addresses of the memory that has not yet been used. 
+In multiprogramming, the OS decides the order in which processes are granted memory access, and for how long. 
+It Allocates the memory to a process when the process requests it and deallocates the memory when the process has terminated or is performing an I/O operation.*/}
+
+
+
+
+- **Device Management**:
 
 {/* 
 An OS manages device communication via its respective drivers. It performs the following activities for device management.
@@ -40,24 +91,24 @@ Allocates devices effectively and efficiently. Deallocates devices when they are
 It receives the requests from these devices, performs a specific task, and communicates back to the requesting process.
  */}
 
-- ** File Management **:
+- **File Management**:
 
 {/* A file system is organized into directories for efficient or easy navigation and usage. These directories may contain other directories and other files. An Operating System carries out the following file management activities. It keeps track of where information is stored, user access settings, the status of every file, and more. These facilities are collectively known as the file system. An OS keeps track of information regarding the creation, deletion, transfer, copy, and storage of files in an organized way. It also maintains the integrity of the data stored in these files, including the file directory structure, by protecting against unauthorized access. */}
 
-- ** I/O Management **:
+- **I/O Management**:
 {/* I/O management is the important function of operating system refers to how the OS handles input and output operations between the computer and external devices, such as keyboards, mice, printers, hard drives, and monitors. */}
-- ** Network Management **:
+- **Network Management**:
 
 {/* Network Communication: Think of them as traffic cops for your internet traffic. Operating systems help computers talk to each other and the internet. They manage how data is packaged and sent over the network, making sure it arrives safely and in the right order.
 Settings and Monitoring: Think of them as the settings and security guard for your internet connection. They also let you set up your network connections, like Wi-Fi or Ethernet, and keep an eye on how your network is doing. They make sure your computer is using the network efficiently and securely, like adjusting the speed of your internet or protecting your computer from online threats. */}
 
-- ** User Interface or Command Interpreter**:
+- **User Interface or Command Interpreter**:
     {/* The user interacts with the computer system through the operating system. Hence OS acts as an interface between the user and the computer hardware. This user interface is offered through a set of commands or a graphical user interface (GUI). Through this interface, the user makes interacts with the applications and the machine hardware. */}
 
-- ** Booting **:
+- **Booting**:
 {/* The process of starting or restarting the computer is known as booting. If the computer is switched off completely and if turned on then it is called cold booting. Warm booting is a process of using the operating system to restart the computer. */}
 
-- ** Security **:
+- **Security**:
 
 {/* 
 The operating system uses password protection to protect user data and similar other techniques. it also prevents unauthorized access to programs and user data. The operating system provides various techniques which assure the integrity and confidentiality of user data. The following security measures are used to protect user data:
@@ -67,7 +118,8 @@ Protection against intrusion by keeping the firewall active.
 Protecting the system memory against malicious access.
 Displaying messages related to system vulnerabilities. */}
 
-- ** Control Over System Performance **:
+- **Control Over System Performance**:
+
 {/* Control Over System Performance
 Operating systems play a pivotal role in controlling and optimizing system performance. They act as intermediaries between hardware and software, ensuring that computing resources are efficiently utilized. One fundamental aspect is resource allocation, where the OS allocates CPU time, memory, and I/O devices to different processes, striving to provide fair and optimal resource utilization. Process scheduling, a critical function, helps decide which processes or threads should run when preventing any single task from monopolizing the CPU and enabling effective multitasking. */}
 
@@ -116,7 +168,7 @@ Debugging: Operating systems provide debugging tools that allow developers to id
  */}
 
 
-#### Type of Operation System
+#### Type of Operating System
 
 
 {/* An Operating System acts as a communication interface between the user and computer hardware. Its purpose is to provide a platform on which a user can execute programs conveniently and efficiently. An operating system is software that manages the allocation of Computer Hardware. The coordination of the hardware must be appropriate to ensure the computer system’s correct operation and to prevent user programs from interfering with it. The main goal of the Operating System is to make the computer environment more convenient to use and the Secondary goal is to use the resources most efficiently. In this article we will see functions of operating system in detail.

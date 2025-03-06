@@ -14,6 +14,7 @@ import {
   TypographyLI,
   TypographyUL,
 } from "./components/typography/typography-list";
+import { TypographyStrong } from "./components/typography/typography-strong";
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
@@ -53,6 +54,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
         {...(props as ImageProps)}
       />
     ),
+    strong: ({ children }) => <TypographyStrong>{children}</TypographyStrong>,
 
     ...components,
   };
