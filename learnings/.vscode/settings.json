@@ -1,0 +1,21 @@
+{
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    ".next": true,
+    "node_modules": true,
+    ".vscode": true,
+    "yarn.lock": true,
+    "tsconfig.json": true
+  },
+  "hide-files.files": [
+    ".next",
+    "node_modules",
+    ".vscode",
+    "yarn.lock",
+    "tsconfig.json"
+  ]
+}
