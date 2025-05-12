@@ -1,6 +1,10 @@
 {
-  "extends": "@repo/typescript-config/react-library.json",
+  "extends": "@learnings/typescript-config/react-library.json",
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@learnings/ui": ["./src/*"]
+    },
     "outDir": "dist"
   },
   "include": ["src"],
