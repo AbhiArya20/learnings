@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@dnd-kit/react": "^0.1.21",
+    "@tanstack/react-pacer": "^0.15.0",
     "@workspace/ui": "workspace:*",
     "lucide-react": "^0.475.0",
     "next": "^15.4.5",
