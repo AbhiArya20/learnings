@@ -11,8 +11,6 @@ import { DragDropProvider, useDraggable, useDroppable } from "@dnd-kit/react"
 import { debounce } from '@tanstack/react-pacer'
 import * as TabsPrimitive from "@radix-ui/react-tabs"
 
-
-
 export default function Page() {
   return (
     <LayoutProvider>
@@ -144,7 +142,6 @@ export default function Page() {
                             Description
                           </TabsContent>
                         </Tabs>
-
                       </ResizableLayoutContent>
                     </ResizablePanel>
                   </ResizablePanelGroup>
@@ -366,8 +363,8 @@ function ResizablePanel({
     <>
       <ResizablePrimitive.Panel id={id} defaultSize={defaultSize} className={className} data-slot="resizable-panel" onResize={resize} {...props}>
         {children}
-        {/* <div ref={ref} className={cn("relative z-999 h-full", isDropTarget && "bg-blue-500/5 border-2 ring-2 ring-blue-600", className)}>
-        </div> */}
+        <div ref={ref} className={cn("h-full", isDropTarget && "bg-blue-500/5 border-2 ring-2 ring-blue-600", className)}>
+        </div>
       </ResizablePrimitive.Panel>
     </>
   )
