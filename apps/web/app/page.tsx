@@ -5,11 +5,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@works
 import { cn } from "@workspace/ui/lib/utils"
 import { ChevronLeft, ChevronRight, ListTodo, Shuffle } from "lucide-react"
 import { createContext, PropsWithChildren, useContext } from "react"
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@workspace/ui/components/resizable"
+import { GripVerticalIcon } from "lucide-react"
+import * as React from "react"
+import * as ResizablePrimitive from "react-resizable-panels"
 
 
 export default function Page() {
@@ -85,7 +83,141 @@ export default function Page() {
           </LayoutHeaderButtonList>
         </LayoutHeader>
         <LayoutContent>
-          <ResizableDemo />
+          <ResizablePanelGroup
+            direction="horizontal"
+          >
+            <ResizablePanel defaultSize={50} className="border border-border rounded-lg min-w-8">
+              <ResizableLayoutContent>
+                <LayoutContentHeader>
+                  <LayoutContentButton>
+                    <ListTodo /> code
+                  </LayoutContentButton>
+                  <LayoutContentButton>
+                    <ListTodo /> description
+                  </LayoutContentButton>
+                </LayoutContentHeader>
+                <LayoutContentHeader>
+                  <LayoutContentButton>
+                    <ListTodo /> code
+                  </LayoutContentButton>
+                  <LayoutContentButton>
+                    <ListTodo /> description
+                  </LayoutContentButton>
+                </LayoutContentHeader>
+                <LayoutContentBody>
+                  <div className="flex items-center justify-center">
+                    <h1 className="text-2xl font-bold">Hello World</h1>
+                  </div>
+                </LayoutContentBody>
+                <LayoutContentFooter>
+                  <LayoutContentButton>
+                    <ListTodo />
+                  </LayoutContentButton>
+                </LayoutContentFooter>
+              </ResizableLayoutContent>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={50} >
+              <ResizablePanelGroup direction="vertical">
+                <ResizablePanel defaultSize={50} className="min-h-8">
+                  <ResizablePanelGroup direction="horizontal">
+                    <ResizablePanel defaultSize={50} className="border border-border rounded-lg min-w-8">
+                      <ResizableLayoutContent>
+                        <LayoutContentHeader>
+                          <LayoutContentButton>
+                            <ListTodo /> code
+                          </LayoutContentButton>
+                          <LayoutContentButton>
+                            <ListTodo /> description
+                          </LayoutContentButton>
+                        </LayoutContentHeader>
+                        <LayoutContentHeader>
+                          <LayoutContentButton>
+                            <ListTodo /> code
+                          </LayoutContentButton>
+                          <LayoutContentButton>
+                            <ListTodo /> description
+                          </LayoutContentButton>
+                        </LayoutContentHeader>
+                        <LayoutContentBody>
+                          <div className="flex items-center justify-center">
+                            <h1 className="text-2xl font-bold">Hello World</h1>
+                          </div>
+                        </LayoutContentBody>
+                        <LayoutContentFooter>
+                          <LayoutContentButton>
+                            <ListTodo />
+                          </LayoutContentButton>
+                        </LayoutContentFooter>
+                      </ResizableLayoutContent>
+                    </ResizablePanel>
+                    <ResizableHandle withHandle />
+                    <ResizablePanel defaultSize={50} className="border border-border rounded-lg min-w-8">
+                      <ResizableLayoutContent>
+                        <LayoutContentHeader>
+                          <LayoutContentButton>
+                            <ListTodo /> code
+                          </LayoutContentButton>
+                          <LayoutContentButton>
+                            <ListTodo /> description
+                          </LayoutContentButton>
+                        </LayoutContentHeader>
+                        <LayoutContentHeader>
+                          <LayoutContentButton>
+                            <ListTodo /> code
+                          </LayoutContentButton>
+                          <LayoutContentButton>
+                            <ListTodo /> description
+                          </LayoutContentButton>
+                        </LayoutContentHeader>
+                        <LayoutContentBody>
+                          <div className="flex items-center justify-center">
+                            <h1 className="text-2xl font-bold">Hello World</h1>
+                          </div>
+                        </LayoutContentBody>
+                        <LayoutContentFooter>
+                          <LayoutContentButton>
+                            <ListTodo />
+                          </LayoutContentButton>
+                        </LayoutContentFooter>
+                      </ResizableLayoutContent>
+                    </ResizablePanel>
+                  </ResizablePanelGroup>
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel defaultSize={75} className="border border-border rounded-lg min-h-8">
+                  <ResizableLayoutContent>
+                    <LayoutContentHeader>
+                      <LayoutContentButton>
+                        <ListTodo /> code
+                      </LayoutContentButton>
+                      <LayoutContentButton>
+                        <ListTodo /> description
+                      </LayoutContentButton>
+                    </LayoutContentHeader>
+                    <LayoutContentHeader>
+                      <LayoutContentButton>
+                        <ListTodo /> code
+                      </LayoutContentButton>
+                      <LayoutContentButton>
+                        <ListTodo /> description
+                      </LayoutContentButton>
+                    </LayoutContentHeader>
+                    <LayoutContentBody>
+                      <div className="flex items-center justify-center">
+                        <h1 className="text-2xl font-bold">Hello World</h1>
+                      </div>
+                    </LayoutContentBody>
+                    <LayoutContentFooter>
+                      <LayoutContentButton>
+                        <ListTodo />
+                      </LayoutContentButton>
+                    </LayoutContentFooter>
+                  </ResizableLayoutContent>
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </LayoutContent>
       </Layout>
     </LayoutProvider>
@@ -170,42 +302,85 @@ function LayoutHeaderButton({ children, className }: PropsWithChildren<{ classNa
 }
 
 function LayoutContent({ className, children }: PropsWithChildren<{ className?: string }>) {
-  return <main className={cn("flex-1 flex items-center justify-center", className)}>
+  return <main className={cn("flex-1 flex items-center justify-center px-2 pb-2", className)}>
     {children}
   </main>
 }
 
-
-
-
-export function ResizableDemo() {
+function ResizablePanelGroup({
+  className,
+  ...props
+}: React.ComponentProps<typeof ResizablePrimitive.PanelGroup>) {
   return (
-    <ResizablePanelGroup
-      direction="horizontal"
-      className="rounded-lg border"
-    >
-      <ResizablePanel defaultSize={50}>
-        <div className="flex h-[200px] items-center justify-center p-6">
-          <span className="font-semibold">One</span>
-        </div>
-      </ResizablePanel>
-      <ResizableHandle />
-      <ResizablePanel defaultSize={50}>
-        <ResizablePanelGroup direction="vertical">
-          <ResizablePanel defaultSize={25}>
-            <div className="flex h-full items-center justify-center p-6">
-              <span className="font-semibold">Two</span>
-            </div>
-          </ResizablePanel>
-          <ResizableHandle />
-          <ResizablePanel defaultSize={75}>
-            <div className="flex h-full items-center justify-center p-6">
-              <span className="font-semibold">Three</span>
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </ResizablePanel>
-    </ResizablePanelGroup>
+    <ResizablePrimitive.PanelGroup
+      data-slot="resizable-panel-group"
+      className={cn(
+        "flex h-full w-full data-[panel-group-direction=vertical]:flex-col border-none data-[panel-group-direction=vertical]:border-none",
+        className
+      )}
+      {...props}
+    />
   )
 }
 
+function ResizablePanel({
+  ...props
+}: React.ComponentProps<typeof ResizablePrimitive.Panel>) {
+  return <ResizablePrimitive.Panel data-slot="resizable-panel" {...props} />
+}
+
+function ResizableHandle({
+  withHandle,
+  className,
+  ...props
+}: React.ComponentProps<typeof ResizablePrimitive.PanelResizeHandle> & {
+  withHandle?: boolean
+}) {
+  return (
+    <ResizablePrimitive.PanelResizeHandle
+      data-slot="resizable-handle"
+      className={cn(
+        " focus-visible:ring-ring relative flex w-2 items-center justify-center after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:ring-1 focus-visible:ring-offset-1 focus-visible:outline-hidden data-[panel-group-direction=vertical]:h-2 data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:translate-x-0 data-[panel-group-direction=vertical]:after:-translate-y-1/2 [&[data-panel-group-direction=vertical]>div]:rotate-90 group",
+        className
+      )}
+      {...props}
+    >
+      {withHandle && (
+        <div className="bg-border z-10 flex h-6 w-1 items-center justify-center rounded-full border group-hover:bg-primary transition-colors">
+
+        </div>
+      )}
+    </ResizablePrimitive.PanelResizeHandle>
+  )
+}
+
+
+function ResizableLayoutContent({ className, children }: PropsWithChildren<{ className?: string }>) {
+  return <div className={cn("flex flex-col h-full", className)}>
+    {children}
+  </div>
+}
+
+function LayoutContentHeader({ className, children }: PropsWithChildren<{ className?: string }>) {
+  return <div className={cn("flex items-center gap-2 h-12 px-2.5 border-b border-border", className)}>
+    {children}
+  </div>
+}
+
+function LayoutContentButton({ className, children }: PropsWithChildren<{ className?: string }>) {
+  return <Button className={cn("", className)} variant={"ghost"} size={"sm"}>
+    {children}
+  </Button>
+}
+
+function LayoutContentFooter({ className, children }: PropsWithChildren<{ className?: string }>) {
+  return <div className={cn("flex items-center gap-2 h-12 px-2.5 border-t border-border ", className)}>
+    {children}
+  </div>
+}
+
+function LayoutContentBody({ className, children }: PropsWithChildren<{ className?: string }>) {
+  return <div className={cn("flex-1 flex flex-col items-center justify-center px-2 pb-2", className)}>
+    {children}
+  </div>
+}
