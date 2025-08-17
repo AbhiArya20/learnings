@@ -8,219 +8,173 @@ import { createContext, PropsWithChildren, useContext } from "react"
 import { GripVerticalIcon } from "lucide-react"
 import * as React from "react"
 import * as ResizablePrimitive from "react-resizable-panels"
+import { DragDropProvider, useDraggable, useDroppable } from "@dnd-kit/react"
 
 
 export default function Page() {
   return (
-    <LayoutProvider>
-      <Layout>
-        <LayoutHeader>
-          <LayoutHeaderButtonList>
-            <LayoutHeaderButtonItem tooltip={"Problems List"}>
-              <LayoutHeaderButton>
-                <ListTodo /> Problems List
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <ChevronLeft />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <ChevronRight />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <Shuffle />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-          </LayoutHeaderButtonList>
-          <LayoutHeaderButtonList>
-            <LayoutHeaderButtonItem tooltip={"Problems List"}>
-              <LayoutHeaderButton>
-                <ListTodo />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <ChevronLeft />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <ChevronRight />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <Shuffle />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-          </LayoutHeaderButtonList>
-          <LayoutHeaderButtonList>
-            <LayoutHeaderButtonItem tooltip={"Problems List"}>
-              <LayoutHeaderButton>
-                <ListTodo />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <ChevronLeft />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <ChevronRight />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <Shuffle />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-          </LayoutHeaderButtonList>
-        </LayoutHeader>
-        <LayoutContent>
-          <ResizablePanelGroup
-            direction="horizontal"
-          >
-            <ResizablePanel defaultSize={50} className="border border-border rounded-lg min-w-8">
-              <ResizableLayoutContent>
-                <LayoutContentHeader>
-                  <LayoutContentButton>
-                    <ListTodo /> code
-                  </LayoutContentButton>
-                  <LayoutContentButton>
-                    <ListTodo /> description
-                  </LayoutContentButton>
-                </LayoutContentHeader>
-                <LayoutContentHeader>
-                  <LayoutContentButton>
-                    <ListTodo /> code
-                  </LayoutContentButton>
-                  <LayoutContentButton>
-                    <ListTodo /> description
-                  </LayoutContentButton>
-                </LayoutContentHeader>
-                <LayoutContentBody>
-                  <div className="flex items-center justify-center">
-                    <h1 className="text-2xl font-bold">Hello World</h1>
-                  </div>
-                </LayoutContentBody>
-                <LayoutContentFooter>
-                  <LayoutContentButton>
-                    <ListTodo />
-                  </LayoutContentButton>
-                </LayoutContentFooter>
-              </ResizableLayoutContent>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={50} >
-              <ResizablePanelGroup direction="vertical">
-                <ResizablePanel defaultSize={50} className="min-h-8">
-                  <ResizablePanelGroup direction="horizontal">
-                    <ResizablePanel defaultSize={50} className="border border-border rounded-lg min-w-8">
-                      <ResizableLayoutContent>
-                        <LayoutContentHeader>
-                          <LayoutContentButton>
-                            <ListTodo /> code
-                          </LayoutContentButton>
-                          <LayoutContentButton>
-                            <ListTodo /> description
-                          </LayoutContentButton>
-                        </LayoutContentHeader>
-                        <LayoutContentHeader>
-                          <LayoutContentButton>
-                            <ListTodo /> code
-                          </LayoutContentButton>
-                          <LayoutContentButton>
-                            <ListTodo /> description
-                          </LayoutContentButton>
-                        </LayoutContentHeader>
-                        <LayoutContentBody>
-                          <div className="flex items-center justify-center">
-                            <h1 className="text-2xl font-bold">Hello World</h1>
-                          </div>
-                        </LayoutContentBody>
-                        <LayoutContentFooter>
-                          <LayoutContentButton>
-                            <ListTodo />
-                          </LayoutContentButton>
-                        </LayoutContentFooter>
-                      </ResizableLayoutContent>
-                    </ResizablePanel>
-                    <ResizableHandle withHandle />
-                    <ResizablePanel defaultSize={50} className="border border-border rounded-lg min-w-8">
-                      <ResizableLayoutContent>
-                        <LayoutContentHeader>
-                          <LayoutContentButton>
-                            <ListTodo /> code
-                          </LayoutContentButton>
-                          <LayoutContentButton>
-                            <ListTodo /> description
-                          </LayoutContentButton>
-                        </LayoutContentHeader>
-                        <LayoutContentHeader>
-                          <LayoutContentButton>
-                            <ListTodo /> code
-                          </LayoutContentButton>
-                          <LayoutContentButton>
-                            <ListTodo /> description
-                          </LayoutContentButton>
-                        </LayoutContentHeader>
-                        <LayoutContentBody>
-                          <div className="flex items-center justify-center">
-                            <h1 className="text-2xl font-bold">Hello World</h1>
-                          </div>
-                        </LayoutContentBody>
-                        <LayoutContentFooter>
-                          <LayoutContentButton>
-                            <ListTodo />
-                          </LayoutContentButton>
-                        </LayoutContentFooter>
-                      </ResizableLayoutContent>
-                    </ResizablePanel>
-                  </ResizablePanelGroup>
-                </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={75} className="border border-border rounded-lg min-h-8">
-                  <ResizableLayoutContent>
-                    <LayoutContentHeader>
-                      <LayoutContentButton>
-                        <ListTodo /> code
-                      </LayoutContentButton>
-                      <LayoutContentButton>
-                        <ListTodo /> description
-                      </LayoutContentButton>
-                    </LayoutContentHeader>
-                    <LayoutContentHeader>
-                      <LayoutContentButton>
-                        <ListTodo /> code
-                      </LayoutContentButton>
-                      <LayoutContentButton>
-                        <ListTodo /> description
-                      </LayoutContentButton>
-                    </LayoutContentHeader>
-                    <LayoutContentBody>
-                      <div className="flex items-center justify-center">
-                        <h1 className="text-2xl font-bold">Hello World</h1>
-                      </div>
-                    </LayoutContentBody>
-                    <LayoutContentFooter>
-                      <LayoutContentButton>
-                        <ListTodo />
-                      </LayoutContentButton>
-                    </LayoutContentFooter>
-                  </ResizableLayoutContent>
-                </ResizablePanel>
-              </ResizablePanelGroup>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </LayoutContent>
-      </Layout>
-    </LayoutProvider>
+    <LayoutDndProvider>
+
+
+      <LayoutProvider>
+        <Layout>
+          <LayoutHeader>
+            <LayoutHeaderButtonList>
+              <LayoutHeaderButtonItem tooltip={"Problems List"}>
+                <LayoutHeaderButton>
+                  <ListTodo /> Problems List
+                </LayoutHeaderButton>
+              </LayoutHeaderButtonItem>
+              <LayoutHeaderButtonItem>
+                <LayoutHeaderButton>
+                  <ChevronLeft />
+                </LayoutHeaderButton>
+              </LayoutHeaderButtonItem>
+              <LayoutHeaderButtonItem>
+                <LayoutHeaderButton>
+                  <ChevronRight />
+                </LayoutHeaderButton>
+              </LayoutHeaderButtonItem>
+              <LayoutHeaderButtonItem>
+                <LayoutHeaderButton>
+                  <Shuffle />
+                </LayoutHeaderButton>
+              </LayoutHeaderButtonItem>
+            </LayoutHeaderButtonList>
+            <LayoutHeaderButtonList>
+              <LayoutHeaderButtonItem tooltip={"Problems List"}>
+                <LayoutHeaderButton>
+                  <ListTodo />
+                </LayoutHeaderButton>
+              </LayoutHeaderButtonItem>
+              <LayoutHeaderButtonItem>
+                <LayoutHeaderButton>
+                  <ChevronLeft />
+                </LayoutHeaderButton>
+              </LayoutHeaderButtonItem>
+              <LayoutHeaderButtonItem>
+                <LayoutHeaderButton>
+                  <ChevronRight />
+                </LayoutHeaderButton>
+              </LayoutHeaderButtonItem>
+              <LayoutHeaderButtonItem>
+                <LayoutHeaderButton>
+                  <Shuffle />
+                </LayoutHeaderButton>
+              </LayoutHeaderButtonItem>
+            </LayoutHeaderButtonList>
+            <LayoutHeaderButtonList>
+              <LayoutHeaderButtonItem tooltip={"Problems List"}>
+                <LayoutHeaderButton>
+                  <ListTodo />
+                </LayoutHeaderButton>
+              </LayoutHeaderButtonItem>
+              <LayoutHeaderButtonItem>
+                <LayoutHeaderButton>
+                  <ChevronLeft />
+                </LayoutHeaderButton>
+              </LayoutHeaderButtonItem>
+              <LayoutHeaderButtonItem>
+                <LayoutHeaderButton>
+                  <ChevronRight />
+                </LayoutHeaderButton>
+              </LayoutHeaderButtonItem>
+              <LayoutHeaderButtonItem>
+                <LayoutHeaderButton>
+                  <Shuffle />
+                </LayoutHeaderButton>
+              </LayoutHeaderButtonItem>
+            </LayoutHeaderButtonList>
+          </LayoutHeader>
+          <LayoutContent>
+            <ResizablePanelGroup
+              direction="horizontal"
+            >
+              <ResizablePanel defaultSize={50} className="border border-border rounded-lg min-w-8">
+                <ResizableLayoutContent>
+                  <LayoutContentHeader>
+                    <LayoutContentButton>
+                      <ListTodo /> code
+                    </LayoutContentButton>
+                    <LayoutContentButton>
+                      <ListTodo /> description
+                    </LayoutContentButton>
+                  </LayoutContentHeader>
+                  <LayoutContentBody>
+                    <div className="flex items-center justify-center">
+                      <h1 className="text-2xl font-bold">Hello World</h1>
+                    </div>
+                  </LayoutContentBody>
+                </ResizableLayoutContent>
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={50} >
+                <ResizablePanelGroup direction="vertical">
+                  <ResizablePanel defaultSize={50} className="min-h-8">
+                    <ResizablePanelGroup direction="horizontal">
+                      <ResizablePanel defaultSize={50} className="border border-border rounded-lg min-w-8">
+                        <ResizableLayoutContent>
+                          <LayoutContentHeader>
+                            <LayoutContentButton>
+                              <ListTodo /> code
+                            </LayoutContentButton>
+                            <LayoutContentButton>
+                              <ListTodo /> description
+                            </LayoutContentButton>
+                          </LayoutContentHeader>
+                          <LayoutContentBody>
+                            <div className="flex items-center justify-center">
+                              <h1 className="text-2xl font-bold">Hello World</h1>
+                            </div>
+                          </LayoutContentBody>
+                        </ResizableLayoutContent>
+                      </ResizablePanel>
+                      <ResizableHandle withHandle />
+                      <ResizablePanel defaultSize={50} className="border border-border rounded-lg min-w-8">
+                        <ResizableLayoutContent>
+                          <LayoutContentHeader>
+                            <LayoutContentButton>
+                              <ListTodo /> code
+                            </LayoutContentButton>
+                            <LayoutContentButton>
+                              <ListTodo /> description
+                            </LayoutContentButton>
+                          </LayoutContentHeader>
+                          <LayoutContentBody>
+                            <div className="flex items-center justify-center">
+                              <h1 className="text-2xl font-bold">Hello World</h1>
+                            </div>
+                          </LayoutContentBody>
+
+                        </ResizableLayoutContent>
+                      </ResizablePanel>
+                    </ResizablePanelGroup>
+                  </ResizablePanel>
+                  <ResizableHandle withHandle />
+                  <ResizablePanel defaultSize={75} className="border border-border rounded-lg min-h-8">
+                    <ResizableLayoutContent>
+                      <LayoutContentHeader>
+                        <LayoutContentButton>
+                          <ListTodo /> code
+                        </LayoutContentButton>
+                        <LayoutContentButton>
+                          <ListTodo /> description
+                        </LayoutContentButton>
+                      </LayoutContentHeader>
+                      <LayoutContentBody>
+                        <div className="flex items-center justify-center">
+                          <h1 className="text-2xl font-bold">Hello World</h1>
+                        </div>
+                      </LayoutContentBody>
+                    </ResizableLayoutContent>
+                  </ResizablePanel>
+                </ResizablePanelGroup>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          </LayoutContent>
+        </Layout>
+      </LayoutProvider>
+    </LayoutDndProvider>
   )
 }
 
@@ -238,8 +192,21 @@ function useLayout() {
   return context
 }
 
+
+
+function LayoutDndProvider({ children }: PropsWithChildren) {
+  return (
+    <DragDropProvider
+      onDragEnd={() => console.log("onDragEnd")}
+    >
+      {children}
+    </DragDropProvider>
+  );
+}
+
 function LayoutProvider({ children }: PropsWithChildren) {
   return <LayoutContext.Provider value={{}}>
+
     <TooltipProvider delayDuration={0}>
       <div data-slot="layout-wrapper" className="h-full">
         {children}
@@ -247,6 +214,9 @@ function LayoutProvider({ children }: PropsWithChildren) {
     </TooltipProvider>
   </LayoutContext.Provider>
 }
+
+
+
 
 function Layout({ children, className }: PropsWithChildren<{ className?: string }>) {
   return <div className={cn("flex flex-col h-full", className)}>
@@ -284,7 +254,7 @@ function LayoutHeaderButtonItem({ children, className, tooltip }: PropsWithChild
   }
 
   return <Tooltip>
-    <TooltipTrigger>
+    <TooltipTrigger asChild>
       {buttonItem}
     </TooltipTrigger>
     <TooltipContent
@@ -294,6 +264,9 @@ function LayoutHeaderButtonItem({ children, className, tooltip }: PropsWithChild
     />
   </Tooltip>
 }
+
+
+
 
 function LayoutHeaderButton({ children, className }: PropsWithChildren<{ className?: string }>) {
   return <Button className={cn("", className)} variant={"ghost"} size={"sm"}>
@@ -362,13 +335,22 @@ function ResizableLayoutContent({ className, children }: PropsWithChildren<{ cla
 }
 
 function LayoutContentHeader({ className, children }: PropsWithChildren<{ className?: string }>) {
-  return <div className={cn("flex items-center gap-2 h-12 px-2.5 border-b border-border", className)}>
+  const { ref, isDropTarget } = useDroppable({
+    id: 'droppable' + Math.random(),
+
+  });
+  return <div
+    data-drop-target={isDropTarget ? "true" : "false"}
+    className={cn("flex items-center gap-2 h-12 px-2.5 border-b border-border data-[drop-target=true]:bg-red-400", className)} ref={ref}>
     {children}
   </div>
 }
 
 function LayoutContentButton({ className, children }: PropsWithChildren<{ className?: string }>) {
-  return <Button className={cn("", className)} variant={"ghost"} size={"sm"}>
+  const { ref } = useDraggable({
+    id: 'draggable' + Math.random(),
+  });
+  return <Button className={cn("", className)} variant={"ghost"} size={"sm"} ref={ref}>
     {children}
   </Button>
 }
