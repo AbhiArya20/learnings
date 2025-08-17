@@ -9,6 +9,9 @@ import * as React from "react"
 import * as ResizablePrimitive from "react-resizable-panels"
 import { DragDropProvider, useDraggable, useDroppable } from "@dnd-kit/react"
 import { debounce } from '@tanstack/react-pacer'
+import * as TabsPrimitive from "@radix-ui/react-tabs"
+
+
 
 export default function Page() {
   return (
@@ -91,19 +94,18 @@ export default function Page() {
               id='resizable-panel-1'
             >
               <ResizableLayoutContent>
-                <LayoutContentHeader>
-                  <LayoutContentButton>
-                    <ListTodo /> code
-                  </LayoutContentButton>
-                  <LayoutContentButton>
-                    <ListTodo /> description
-                  </LayoutContentButton>
-                </LayoutContentHeader>
-                <LayoutContentBody>
-                  <div className="flex items-center justify-center">
-                    <h1 className="text-2xl font-bold">Hello World</h1>
-                  </div>
-                </LayoutContentBody>
+                <Tabs defaultValue="account">
+                  <TabsList>
+                    <TabsTrigger value="account">Code</TabsTrigger>
+                    <TabsTrigger value="password">Description</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="account" >
+                    Code
+                  </TabsContent>
+                  <TabsContent value="password" >
+                    Description
+                  </TabsContent>
+                </Tabs>
               </ResizableLayoutContent>
             </ResizablePanel>
             <ResizableHandle withHandle />
@@ -113,37 +115,35 @@ export default function Page() {
                   <ResizablePanelGroup direction="horizontal" id='resizable-panel-group-3'>
                     <ResizablePanel defaultSize={50} className="border border-border rounded-lg min-h-8 min-w-8" id='resizable-panel-4'>
                       <ResizableLayoutContent>
-                        <LayoutContentHeader>
-                          <LayoutContentButton>
-                            <ListTodo /> code
-                          </LayoutContentButton>
-                          <LayoutContentButton>
-                            <ListTodo /> description
-                          </LayoutContentButton>
-                        </LayoutContentHeader>
-                        <LayoutContentBody>
-                          <div className="flex items-center justify-center">
-                            <h1 className="text-2xl font-bold">Hello World</h1>
-                          </div>
-                        </LayoutContentBody>
+                        <Tabs defaultValue="account">
+                          <TabsList>
+                            <TabsTrigger value="account">Code</TabsTrigger>
+                            <TabsTrigger value="password">Description</TabsTrigger>
+                          </TabsList>
+                          <TabsContent value="account" >
+                            Code
+                          </TabsContent>
+                          <TabsContent value="password" >
+                            Description
+                          </TabsContent>
+                        </Tabs>
                       </ResizableLayoutContent>
                     </ResizablePanel>
                     <ResizableHandle withHandle />
                     <ResizablePanel defaultSize={50} className="border border-border rounded-lg min-h-8 min-w-8" id='resizable-panel-5'>
                       <ResizableLayoutContent>
-                        <LayoutContentHeader>
-                          <LayoutContentButton>
-                            <ListTodo /> code
-                          </LayoutContentButton>
-                          <LayoutContentButton>
-                            <ListTodo /> description
-                          </LayoutContentButton>
-                        </LayoutContentHeader>
-                        <LayoutContentBody>
-                          <div className="flex items-center justify-center">
-                            <h1 className="text-2xl font-bold">Hello World</h1>
-                          </div>
-                        </LayoutContentBody>
+                        <Tabs defaultValue="account">
+                          <TabsList>
+                            <TabsTrigger value="account">Code</TabsTrigger>
+                            <TabsTrigger value="password">Description</TabsTrigger>
+                          </TabsList>
+                          <TabsContent value="account" >
+                            Code
+                          </TabsContent>
+                          <TabsContent value="password" >
+                            Description
+                          </TabsContent>
+                        </Tabs>
 
                       </ResizableLayoutContent>
                     </ResizablePanel>
@@ -152,26 +152,23 @@ export default function Page() {
                 <ResizableHandle withHandle />
                 <ResizablePanel defaultSize={75} className="border border-border rounded-lg min-h-8 min-w-8" id='resizable-panel-6'>
                   <ResizableLayoutContent>
-                    <LayoutContentHeader>
-                      <LayoutContentButton>
-                        instead of Button use tab component from shadcn-ui - easy
-                        <ListTodo /> code
-                      </LayoutContentButton>
-                      <LayoutContentButton>
-                        <ListTodo /> description
-                      </LayoutContentButton>
-                    </LayoutContentHeader>
-                    <LayoutContentBody>
-                      <div className="flex items-center justify-center">
-                        <h1 className="text-2xl font-bold">Hello World</h1>
-                      </div>
-                    </LayoutContentBody>
+                    <Tabs defaultValue="account">
+                      <TabsList>
+                        <TabsTrigger value="account">Code</TabsTrigger>
+                        <TabsTrigger value="password">Description</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="account" >
+                        Code
+                      </TabsContent>
+                      <TabsContent value="password" >
+                        Description
+                      </TabsContent>
+                    </Tabs>
                   </ResizableLayoutContent>
                 </ResizablePanel>
               </ResizablePanelGroup>
             </ResizablePanel>
           </ResizablePanelGroup>
-
         </LayoutContent>
       </Layout>
     </LayoutProvider>
@@ -291,7 +288,6 @@ function useLayout() {
   return context
 }
 
-
 function ResizablePanelGroup({
   id = useId(),
   direction,
@@ -362,12 +358,18 @@ function ResizablePanel({
     }
   )
 
+  const { isDropTarget, ref } = useDroppable({
+    id: 'droppable' + Math.random(),
+  });
+
   return (
-    <ResizablePrimitive.Panel id={id} defaultSize={defaultSize} className={className} data-slot="resizable-panel" onResize={
-      resize
-    }{...props}>
-      {children}
-    </ResizablePrimitive.Panel>
+    <>
+      <ResizablePrimitive.Panel id={id} defaultSize={defaultSize} className={className} data-slot="resizable-panel" onResize={resize} {...props}>
+        {children}
+        {/* <div ref={ref} className={cn("relative z-999 h-full", isDropTarget && "bg-blue-500/5 border-2 ring-2 ring-blue-600", className)}>
+        </div> */}
+      </ResizablePrimitive.Panel>
+    </>
   )
 }
 
@@ -472,35 +474,73 @@ function ResizableLayoutContent({ className, children }: PropsWithChildren<{ cla
   </div>
 }
 
-function LayoutContentHeader({ className, children }: PropsWithChildren<{ className?: string }>) {
+function Tabs({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Root>) {
+  return (
+    <TabsPrimitive.Root
+      data-slot="tabs"
+      className={cn("flex h-full flex-col gap-2", className)}
+      {...props}
+    />
+  )
+}
+
+function TabsList({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.List>) {
+
   const { ref, isDropTarget } = useDroppable({
     id: 'droppable' + Math.random(),
 
   });
-  return <div
-    data-drop-target={isDropTarget ? "true" : "false"}
-    className={cn("flex items-center gap-2 h-12 px-2.5 border-b border-border data-[drop-target=true]:bg-red-400", className)} ref={ref}>
-    {children}
-  </div>
+
+  return (
+    <TabsPrimitive.List
+      data-slot="tabs-list"
+      data-drop-target={isDropTarget ? "true" : "false"}
+      ref={ref}
+      className={cn(
+        "flex items-center gap-2 h-12 px-2.5 border-b border-border",
+        className
+      )}
+      {...props}
+    />
+  )
 }
 
-function LayoutContentButton({ className, children }: PropsWithChildren<{ className?: string }>) {
+function TabsTrigger({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
   const { ref } = useDraggable({
     id: 'draggable' + Math.random(),
   });
-  return <Button className={cn("", className)} variant={"ghost"} size={"sm"} ref={ref}>
-    {children}
-  </Button>
+  return (
+    <TabsPrimitive.Trigger
+      data-slot="tabs-trigger"
+      ref={ref}
+      className={cn(
+        "data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring max-w-fit focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      {...props}
+    />
+  )
 }
 
-function LayoutContentFooter({ className, children }: PropsWithChildren<{ className?: string }>) {
-  return <div className={cn("flex items-center gap-2 h-12 px-2.5 border-t border-border ", className)}>
-    {children}
-  </div>
-}
-
-function LayoutContentBody({ className, children }: PropsWithChildren<{ className?: string }>) {
-  return <div className={cn("flex-1 flex flex-col items-center justify-center px-2 pb-2", className)}>
-    {children}
-  </div>
+function TabsContent({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Content>) {
+  return (
+    <TabsPrimitive.Content
+      data-slot="tabs-content"
+      className={cn("flex-1 flex flex-col items-center justify-center px-2 pb-2",
+        className)}
+      {...props}
+    />
+  )
 }
