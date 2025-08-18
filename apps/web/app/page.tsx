@@ -4,16 +4,539 @@ import { Button } from "@workspace/ui/components/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 import { ChevronLeft, ChevronRight, ListTodo, Shuffle } from "lucide-react"
-import { createContext, PropsWithChildren, useContext, useEffect, useId, useState } from "react"
-import * as React from "react"
+import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useId, useMemo, useState } from "react"
 import * as ResizablePrimitive from "react-resizable-panels"
 import { DragDropProvider, useDraggable, useDroppable } from "@dnd-kit/react"
-import { debounce } from '@tanstack/react-pacer'
+import { batch, debounce, throttle } from "@tanstack/react-pacer"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
+import { useLocalStorage } from "react-use"
+import { produce } from "immer"
+
+// -------------------- Types --------------------
+
+type Tabs = {
+  id: string
+  type: "tabs"
+  component: React.ReactNode
+  enableRenderOnDemand: boolean
+}
+
+type BasePanel = {
+  id: string
+  type: "panel"
+  isActive: boolean
+  selected: string
+  size: number
+  foldBeforeSize: number
+}
+
+type PanelWithChildren = { children: PanelGroup[]; tabs?: never }
+type PanelWithTabs = { tabs: Tabs; children?: never }
+
+type Panel = BasePanel & (PanelWithChildren | PanelWithTabs)
+
+type PanelGroup = {
+  id: string
+  type: "panel-group"
+  direction: "horizontal" | "vertical"
+  withHandle?: boolean
+  children: Panel[]
+}
+
+type PanelUpdateOptions = Partial<Pick<Panel, "selected" | "isActive" | "size">>
+
+// -------------------- Layout --------------------
+
+const layoutItem: PanelGroup = {
+  id: "resizable-panel-group-1",
+  type: "panel-group",
+  direction: "horizontal",
+  withHandle: true,
+  children: [
+    {
+      id: "resizable-panel-1",
+      type: "panel",
+      isActive: true,
+      selected: "account",
+      size: 50,
+      foldBeforeSize: 50,
+      tabs: {
+        id: "tab-1",
+        type: "tabs",
+        component: <Tabs defaultValue="account">
+          <TabsList>
+            <TabsTrigger value="account">Code</TabsTrigger>
+            <TabsTrigger value="password">Description</TabsTrigger>
+          </TabsList>
+          <TabsContent value="account" >
+            Code
+          </TabsContent>
+          <TabsContent value="password" >
+            Description
+          </TabsContent>
+        </Tabs>,
+        enableRenderOnDemand: false,
+      }
+    },
+    {
+      id: "resizable-panel-2",
+      type: "panel",
+      isActive: true,
+      selected: "account",
+      size: 50,
+      foldBeforeSize: 50,
+      children: [
+        {
+          id: "resizable-panel-group-2",
+          type: "panel-group",
+          direction: "vertical",
+          withHandle: true,
+          children: [
+            {
+              id: "resizable-panel-3",
+              type: "panel",
+              isActive: true,
+              selected: "account",
+              size: 50,
+              foldBeforeSize: 50,
+              children: [
+                {
+                  id: "resizable-panel-group-3",
+                  type: "panel-group",
+                  direction: "horizontal",
+                  withHandle: true,
+                  children: [
+                    {
+                      id: "resizable-panel-4",
+                      type: "panel",
+                      isActive: true,
+                      selected: "account",
+                      size: 50,
+                      foldBeforeSize: 50,
+                      tabs: {
+                        id: "tab-2",
+                        type: "tabs",
+                        component: <Tabs defaultValue="account">
+                          <TabsList>
+                            <TabsTrigger value="account">Code</TabsTrigger>
+                            <TabsTrigger value="password">Description</TabsTrigger>
+                          </TabsList>
+                          <TabsContent value="account" >
+                            Code
+                          </TabsContent>
+                          <TabsContent value="password" >
+                            Description
+                          </TabsContent>
+                        </Tabs>,
+                        enableRenderOnDemand: false,
+                      }
+                    },
+                    {
+                      id: "resizable-panel-5",
+                      type: "panel",
+                      isActive: true,
+                      selected: "account",
+                      size: 50,
+                      foldBeforeSize: 50,
+                      tabs: {
+                        id: "tab-3",
+                        type: "tabs",
+                        component: <Tabs defaultValue="account">
+                          <TabsList>
+                            <TabsTrigger value="account">Code</TabsTrigger>
+                            <TabsTrigger value="password">Description</TabsTrigger>
+                          </TabsList>
+                          <TabsContent value="account" >
+                            Code
+                          </TabsContent>
+                          <TabsContent value="password" >
+                            Description
+                          </TabsContent>
+                        </Tabs>,
+                        enableRenderOnDemand: false,
+                      }
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              id: "resizable-panel-6",
+              type: "panel",
+              isActive: true,
+              selected: "account",
+              size: 50,
+              foldBeforeSize: 50,
+              tabs: {
+                id: "tab-4",
+                type: "tabs",
+                component: <Tabs defaultValue="account">
+                  <TabsList>
+                    <TabsTrigger value="account">Code</TabsTrigger>
+                    <TabsTrigger value="password">Description</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="account" >
+                    Code
+                  </TabsContent>
+                  <TabsContent value="password" >
+                    Description
+                  </TabsContent>
+                </Tabs>,
+                enableRenderOnDemand: false,
+              }
+            },
+          ]
+        },
+      ],
+    },
+  ]
+}
+
+// -------------------- Context --------------------
+
+type LayoutContextProps = {
+  layout: PanelGroup
+  tabsMap: Map<string, React.ReactNode>
+  updateLayout: (id: string, value: PanelUpdateOptions) => void
+}
+
+const LayoutContext = createContext<LayoutContextProps | null>(null)
+
+export function useLayout() {
+  const context = useContext(LayoutContext)
+  if (!context) throw new Error("useLayout must be used within a LayoutProvider.")
+  return context
+}
+
+// -------------------- Provider --------------------
+
+function LayoutProvider({ children, initialLayout }: PropsWithChildren<{ initialLayout: PanelGroup }>) {
+  // Extract tabs into a map for lazy render
+  const { tabsMap, layoutWithoutComponents } = useMemo(() => {
+    const map = new Map<string, React.ReactNode>()
+
+    const clone = (node: PanelGroup | Panel): PanelGroup | Panel => {
+      if (node.type === "panel-group") {
+        return { ...node, children: node.children.map(clone) as Panel[] }
+      }
+      if (node.type === "panel") {
+        if ("tabs" in node && node.tabs) {
+          map.set(node.tabs.id, node.tabs.component)
+          return { ...node, tabs: { ...node.tabs, component: undefined } }
+        }
+        if (node.children) {
+          return { ...node, children: node.children.map(clone) as PanelGroup[] }
+        }
+        return { ...node }
+      }
+      return { ...node }
+    }
+
+    return { tabsMap: map, layoutWithoutComponents: clone(initialLayout) as PanelGroup }
+  }, [initialLayout])
+
+  const [layout, setLayout] = useLocalStorage<PanelGroup>("layout", layoutWithoutComponents)
+  const [hydration, setHydration] = useState(false)
+  useEffect(() => {
+    setHydration(true)
+  }, [])
+
+
+  const updateLayout = useCallback((id: string, value: PanelUpdateOptions) => {
+    setLayout(old =>
+      produce(old!, draft => {
+        const updateNode = (node: PanelGroup | Panel) => {
+          if (node.type === "panel-group") node.children.forEach(updateNode)
+          if (node.type === "panel") {
+            if (node.id === id) Object.assign(node, value)
+            if (node.children) node.children.forEach(updateNode)
+          }
+        }
+        updateNode(draft)
+      })
+    )
+  }, [setLayout])
+
+  if (!hydration) return null
+  return (
+    <LayoutContext.Provider value={{ layout: layout!, tabsMap, updateLayout }}>
+      <LayoutDndProvider>
+        <TooltipProvider delayDuration={0}>
+          <div data-slot="layout-wrapper" className="h-full">
+            {children}
+          </div>
+        </TooltipProvider>
+      </LayoutDndProvider>
+    </LayoutContext.Provider>
+  )
+}
+
+// -------------------- Resizable Panels --------------------
+
+// className ?: string;
+// direction: Direction;
+// id ?: string | null;
+// keyboardResizeBy ?: number | null;
+// onLayout ?: PanelGroupOnLayout | null;
+// storage ?: PanelGroupStorage;
+// style ?: CSSProperties;
+// tagName ?: keyof HTMLElementTagNameMap;
+//  dir?: "auto" | "ltr" | "rtl" | undefined;
+// Better TypeScript hinting
+
+const ResizablePanelGroup = React.memo(function ResizablePanelGroup({ id, direction, children, className, ...props }: React.ComponentProps<typeof ResizablePrimitive.PanelGroup> & { id: string }) {
+  return (
+    <ResizablePrimitive.PanelGroup
+      id={id}
+      data-slot="resizable-panel-group"
+      direction={direction}
+      className={cn("flex h-full w-full data-[panel-group-direction=vertical]:flex-col border-none data-[panel-group-direction=vertical]:border-none", className)}
+      {...props}
+    >
+      {children}
+    </ResizablePrimitive.PanelGroup>
+  )
+})
+
+// className?: string;
+//   collapsedSize?: number | undefined;
+//   collapsible?: boolean | undefined;
+//   defaultSize?: number | undefined;
+//   id?: string;
+//   maxSize?: number | undefined;
+//   minSize?: number | undefined;
+//   onCollapse?: PanelOnCollapse;
+//   onExpand?: PanelOnExpand;
+//   onResize?: PanelOnResize;
+//   order?: number;
+//   style?: object;
+//   tagName?: T;
+
+const ResizablePanel = React.memo(function ResizablePanel({ id, defaultSize, children, className, ...props }: React.ComponentProps<typeof ResizablePrimitive.Panel> & { id: string }) {
+  const { isDropTarget, ref } = useDroppable({ id })
+  const { updateLayout } = useLayout()
+
+  const debouncedResize = useMemo(() => debounce((size: number) => updateLayout(id, { size }), { wait: 500 }), [id, updateLayout])
+  const throttledResize = useMemo(
+    () => throttle((size: number) => updateLayout(id, { size }), { wait: 500 }),
+    [updateLayout]
+  )
+
+  const processBatch = batch<number>(
+    (items) => {
+      console.log('Processing batch:', items)
+    },
+    {
+      maxSize: 10,
+      wait: 2000,
+      onItemsChange: (batcher) => {
+        console.log('Current batch:', batcher.peekAllItems())
+      }
+    }
+  )
+
+  // const [mounted, setMounted] = React.useState(false)
+
+  // React.useEffect(() => {
+  //   setMounted(true)
+  // }, [])
+
+
+
+
+  return (
+    <ResizablePrimitive.Panel
+      id={id}
+      data-slot="resizable-panel"
+      defaultSize={defaultSize}
+      onResize={(size: number) => updateLayout(id, { size })}
+      className={cn("relative", className)}
+      collapsible
+      collapsedSize={"36px"}
+
+      {...props}
+    >
+      {children}
+      <div ref={ref} className={cn("h-full", isDropTarget && "bg-blue-500/5 border-2 ring-2 ring-blue-600")}></div>
+    </ResizablePrimitive.Panel>
+  )
+})
+
+const ResizableHandle = React.memo(function ResizableHandle({
+  withHandle,
+  className,
+  ...props
+}: React.ComponentProps<typeof ResizablePrimitive.PanelResizeHandle> & {
+  withHandle?: boolean
+}) {
+  return (
+    <ResizablePrimitive.PanelResizeHandle
+      data-slot="resizable-handle"
+      className={cn(
+        " focus-visible:ring-ring relative flex w-2 items-center justify-center after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:ring-1 focus-visible:ring-offset-1 focus-visible:outline-hidden data-[panel-group-direction=vertical]:h-2 data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:translate-x-0 data-[panel-group-direction=vertical]:after:-translate-y-1/2 [&[data-panel-group-direction=vertical]>div]:rotate-90 group",
+        className
+      )}
+      {...props}
+    >
+      {withHandle && (
+        <div className="bg-border z-10 flex h-6 w-1 items-center justify-center rounded-full border group-hover:bg-primary transition-colors"></div>
+      )}
+    </ResizablePrimitive.PanelResizeHandle>
+  )
+})
+
+// -------------------- Layout Renderer --------------------
+
+function LayoutRenderer() {
+  const { layout } = useLayout()
+  return <LayoutRendererInternal layout={layout} />
+}
+
+const LayoutRendererInternal = React.memo(function LayoutRendererInternal({ layout }: { layout: PanelGroup | Panel }) {
+  const { tabsMap } = useLayout()
+
+  if (layout.type === "panel-group") {
+    return (
+      <ResizablePanelGroup direction={layout.direction} id={layout.id} className="border border-border rounded-lg min-h-8 min-w-8">
+        {layout.children.map((child, idx) => (
+          <React.Fragment key={child.id}>
+            <LayoutRendererInternal layout={child} />
+            {idx < layout.children.length - 1 && layout.withHandle && <ResizableHandle withHandle />}
+          </React.Fragment>
+        ))}
+      </ResizablePanelGroup>
+    )
+  }
+
+  if (layout.type === "panel") {
+    if (layout.tabs) {
+      return (
+        <ResizablePanel defaultSize={layout.size} id={layout.id} className="border border-border rounded-lg min-h-8 min-w-8">
+          <div className="flex flex-col h-full">{tabsMap.get(layout.tabs.id)}</div>
+        </ResizablePanel>
+      )
+    }
+
+    if (layout.children) {
+      return (
+        <ResizablePanel defaultSize={layout.size} id={layout.id}>
+          {layout.children.map(child => (
+            <LayoutRendererInternal key={child.id} layout={child} />
+          ))}
+        </ResizablePanel>
+      )
+    }
+  }
+
+  return null
+})
+
+// -------------------- Drag & Drop --------------------
+
+function LayoutDndProvider({ children }: PropsWithChildren) {
+  return <DragDropProvider onDragEnd={() => console.log("onDragEnd")}>{children}</DragDropProvider>
+}
+
+// -------------------- UI Wrappers --------------------
+
+function Layout({ children, className }: PropsWithChildren<{ className?: string }>) {
+  return <div className={cn("flex flex-col h-full", className)}>{children}</div>
+}
+
+function LayoutHeader({ children, className }: PropsWithChildren<{ className?: string }>) {
+  return <nav className={cn("h-12 px-2.5 flex justify-between items-center", className)}>{children}</nav>
+}
+
+function LayoutHeaderButtonList({ children, className }: PropsWithChildren<{ className?: string }>) {
+  return <ul className={cn("flex", className)}>{children}</ul>
+}
+
+function LayoutHeaderButtonItem({ children, className, tooltip }: PropsWithChildren<{ className?: string; tooltip?: string | React.ComponentProps<typeof TooltipContent> }>) {
+  const content = <li data-slot="layout-button-item" className={cn("", className)}>{children}</li>
+  if (!tooltip) return content
+
+  const tooltipProps = typeof tooltip === "string" ? { children: tooltip } : tooltip
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{content}</TooltipTrigger>
+      <TooltipContent side="bottom" align="center" {...tooltipProps} />
+    </Tooltip>
+  )
+}
+
+function LayoutHeaderButton({ children, className }: PropsWithChildren<{ className?: string }>) {
+  return <Button className={cn("", className)} variant="ghost" size="sm">{children}</Button>
+}
+
+function LayoutContent({ children, className }: PropsWithChildren<{ className?: string }>) {
+  return <main className={cn("flex-1 flex items-center justify-center px-2 pb-2", className)}>{children}</main>
+}
+
+// -------------------- Tabs --------------------
+
+function Tabs({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Root>) {
+  return (
+    <TabsPrimitive.Root
+      data-slot="tabs"
+      className={cn("flex h-full flex-col gap-2", className)}
+      {...props}
+    />
+  )
+}
+
+function TabsList({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.List>) {
+  const { ref, isDropTarget } = useDroppable({ id: useId() })
+  return <TabsPrimitive.List data-slot="tabs-list" data-drop-target={isDropTarget} ref={ref}
+    className={cn(
+      "flex items-center gap-2 h-12 px-2.5 border-b border-border",
+      className
+    )}
+    {...props}
+  />
+}
+
+function TabsTrigger({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+  const { ref } = useDraggable({ id: useId() })
+  return (
+    <TabsPrimitive.Trigger
+      data-slot="tabs-trigger"
+      ref={ref}
+      className={cn(
+        "data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring max-w-fit focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function TabsContent({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Content>) {
+  return (
+    <TabsPrimitive.Content
+      data-slot="tabs-content"
+      className={cn("flex-1 flex flex-col items-center justify-center px-2 pb-2", className)}
+      {...props}
+    />
+  )
+}
+
+// -------------------- Export Page --------------------
 
 export default function Page() {
   return (
-    <LayoutProvider>
+    <LayoutProvider initialLayout={layoutItem}>
       <Layout>
         <LayoutHeader>
           <LayoutHeaderButtonList>
@@ -84,460 +607,9 @@ export default function Page() {
           </LayoutHeaderButtonList>
         </LayoutHeader>
         <LayoutContent>
-          <ResizablePanelGroup
-            direction="horizontal"
-            id='resizable-panel-group-1'
-          >
-            <ResizablePanel defaultSize={50} className="border border-border rounded-lg min-h-8 min-w-8"
-              id='resizable-panel-1'
-            >
-              <ResizableLayoutContent>
-                <Tabs defaultValue="account">
-                  <TabsList>
-                    <TabsTrigger value="account">Code</TabsTrigger>
-                    <TabsTrigger value="password">Description</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="account" >
-                    Code
-                  </TabsContent>
-                  <TabsContent value="password" >
-                    Description
-                  </TabsContent>
-                </Tabs>
-              </ResizableLayoutContent>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={50} id='resizable-panel-2'>
-              <ResizablePanelGroup direction="vertical" id='resizable-panel-group-2'>
-                <ResizablePanel defaultSize={50} className="min-h-8" id='resizable-panel-3'>
-                  <ResizablePanelGroup direction="horizontal" id='resizable-panel-group-3'>
-                    <ResizablePanel defaultSize={50} className="border border-border rounded-lg min-h-8 min-w-8" id='resizable-panel-4'>
-                      <ResizableLayoutContent>
-                        <Tabs defaultValue="account">
-                          <TabsList>
-                            <TabsTrigger value="account">Code</TabsTrigger>
-                            <TabsTrigger value="password">Description</TabsTrigger>
-                          </TabsList>
-                          <TabsContent value="account" >
-                            Code
-                          </TabsContent>
-                          <TabsContent value="password" >
-                            Description
-                          </TabsContent>
-                        </Tabs>
-                      </ResizableLayoutContent>
-                    </ResizablePanel>
-                    <ResizableHandle withHandle />
-                    <ResizablePanel defaultSize={50} className="border border-border rounded-lg min-h-8 min-w-8" id='resizable-panel-5'>
-                      <ResizableLayoutContent>
-                        <Tabs defaultValue="account">
-                          <TabsList>
-                            <TabsTrigger value="account">Code</TabsTrigger>
-                            <TabsTrigger value="password">Description</TabsTrigger>
-                          </TabsList>
-                          <TabsContent value="account" >
-                            Code
-                          </TabsContent>
-                          <TabsContent value="password" >
-                            Description
-                          </TabsContent>
-                        </Tabs>
-                      </ResizableLayoutContent>
-                    </ResizablePanel>
-                  </ResizablePanelGroup>
-                </ResizablePanel>
-                <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={75} className="border border-border rounded-lg min-h-8 min-w-8" id='resizable-panel-6'>
-                  <ResizableLayoutContent>
-                    <Tabs defaultValue="account">
-                      <TabsList>
-                        <TabsTrigger value="account">Code</TabsTrigger>
-                        <TabsTrigger value="password">Description</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="account" >
-                        Code
-                      </TabsContent>
-                      <TabsContent value="password" >
-                        Description
-                      </TabsContent>
-                    </Tabs>
-                  </ResizableLayoutContent>
-                </ResizablePanel>
-              </ResizablePanelGroup>
-            </ResizablePanel>
-          </ResizablePanelGroup>
+          <LayoutRenderer />
         </LayoutContent>
       </Layout>
     </LayoutProvider>
-  )
-}
-
-type Tabs = {
-  id: string
-  type: string,
-  component: string, // description, code, editorial submissions, solutions
-  enableRenderOnDemand: boolean, // i think true for editorial submissions, solutions and description and false for code results and all
-}
-
-type Panel = {
-  id: string
-  type: "panel",
-  isActive: boolean,
-  selected: number,
-  size: number,
-  foldBeforeSize: number, // Not sure what this is for
-  children: Tabs[]
-}
-
-type PanelGroup = {
-  id: string
-  type: "panel-group",
-  direction: "horizontal" | "vertical",
-  children: Panel[] | PanelGroup[]
-}
-
-type LayoutItem = Panel | PanelGroup
-
-type Layout = {
-  id: string
-  type: "panel-group",
-  children: LayoutItem[]
-}
-
-type LayoutNode = {
-  id: string
-  type: "panel-group" | "panel"
-  direction?: "horizontal" | "vertical"
-  children?: string[]
-  parentId?: string
-  meta?: any
-}
-
-type LayoutRegistry = Record<string, LayoutNode>
-
-type LayoutContextProps = {
-  registerNode: (node: LayoutNode) => void
-  unregisterNode: (id: string) => void
-  getNode: (id: string) => LayoutNode | undefined
-  updateNode: (id: string, update: LayoutNode) => void
-  tree: LayoutRegistry
-}
-
-const LayoutContext = createContext<LayoutContextProps | null>(null)
-
-function LayoutProvider({ children }: PropsWithChildren) {
-  const [registry, setRegistry] = React.useState<LayoutRegistry>({})
-
-  const registerNode = React.useCallback((node: LayoutNode) => {
-    setRegistry((prev) => ({
-      ...prev,
-      [node.id]: node,
-    }))
-  }, [])
-
-  const unregisterNode = React.useCallback((id: string) => {
-    setRegistry((prev) => {
-      const newRegistry = { ...prev }
-      delete newRegistry[id]
-      return newRegistry
-    })
-  }, [])
-
-  const getNode = (id: string) => registry[id]
-
-  const updateNode = React.useCallback((id: string, update: LayoutNode) => {
-    setRegistry((prev) => ({
-      ...prev,
-      [id]: {
-        ...prev[id],
-        ...update,
-      },
-    }))
-  }, [])
-
-  useEffect(() => {
-    const saved = localStorage.getItem("layout-tree")
-    if (saved) {
-      setRegistry(JSON.parse(saved))
-    }
-  }, [])
-
-  useEffect(() => {
-    localStorage.setItem("layout-tree", JSON.stringify(registry))
-  }, [registry])
-
-  return <LayoutContext.Provider value={{ registerNode, unregisterNode, getNode, updateNode, tree: registry }}>
-    <LayoutDndProvider>
-      <TooltipProvider delayDuration={0}>
-        <div data-slot="layout-wrapper" className="h-full">
-          {children}
-        </div>
-      </TooltipProvider>
-    </LayoutDndProvider>
-  </LayoutContext.Provider>
-}
-
-function useLayout() {
-  const context = useContext(LayoutContext)
-  if (!context) {
-    throw new Error("useLayout must be used within a LayoutProvider.")
-  }
-  return context
-}
-
-function ResizablePanelGroup({
-  id = useId(),
-  direction,
-  children,
-  className,
-  ...props
-}: React.ComponentProps<typeof ResizablePrimitive.PanelGroup> & { id?: string }) {
-  const { registerNode, unregisterNode } = useLayout()
-
-  useEffect(() => {
-    registerNode({
-      id,
-      type: "panel-group",
-      direction,
-    })
-
-    return () => {
-      unregisterNode(id)
-    }
-  }, [id, direction])
-
-  return (
-    <ResizablePrimitive.PanelGroup
-      id={id}
-      direction={direction}
-      data-slot="resizable-panel-group"
-      className={cn(
-        "flex h-full w-full data-[panel-group-direction=vertical]:flex-col border-none data-[panel-group-direction=vertical]:border-none",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </ResizablePrimitive.PanelGroup>
-  )
-}
-
-function ResizablePanel({
-  id = useId(),
-  defaultSize,
-  children,
-  className,
-  ...props
-}: React.ComponentProps<typeof ResizablePrimitive.Panel> & { id?: string }) {
-  const { registerNode, unregisterNode, getNode, updateNode } = useLayout();
-
-  useEffect(() => {
-    registerNode({
-      id,
-      type: "panel",
-      meta: { defaultSize },
-    })
-
-    return () => {
-      unregisterNode(id)
-    }
-  }, [id, defaultSize])
-
-
-  const resize = debounce(
-    (size: number) => (updateNode(id, {
-      meta: {
-        defaultSize: size,
-      }
-    } as LayoutNode)),
-    {
-      wait: 500,
-    }
-  )
-
-  const { isDropTarget, ref } = useDroppable({
-    id: 'droppable' + Math.random(),
-  });
-
-  return (
-    <>
-      <ResizablePrimitive.Panel id={id} defaultSize={defaultSize} className={className} data-slot="resizable-panel" onResize={resize} {...props}>
-        {children}
-        <div ref={ref} className={cn("h-full", isDropTarget && "bg-blue-500/5 border-2 ring-2 ring-blue-600", className)}>
-        </div>
-      </ResizablePrimitive.Panel>
-    </>
-  )
-}
-
-function ResizableHandle({
-  withHandle,
-  className,
-  ...props
-}: React.ComponentProps<typeof ResizablePrimitive.PanelResizeHandle> & {
-  withHandle?: boolean
-}) {
-  return (
-    <ResizablePrimitive.PanelResizeHandle
-      data-slot="resizable-handle"
-      className={cn(
-        " focus-visible:ring-ring relative flex w-2 items-center justify-center after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:ring-1 focus-visible:ring-offset-1 focus-visible:outline-hidden data-[panel-group-direction=vertical]:h-2 data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:translate-x-0 data-[panel-group-direction=vertical]:after:-translate-y-1/2 [&[data-panel-group-direction=vertical]>div]:rotate-90 group",
-        className
-      )}
-      {...props}
-    >
-      {withHandle && (
-        <div className="bg-border z-10 flex h-6 w-1 items-center justify-center rounded-full border group-hover:bg-primary transition-colors"></div>
-      )}
-    </ResizablePrimitive.PanelResizeHandle>
-  )
-}
-
-function LayoutDndProvider({ children }: PropsWithChildren) {
-
-  const { tree, updateNode } = useLayout();
-
-  return (
-    <DragDropProvider
-      onDragEnd={() => console.log("onDragEnd")}
-    >
-      {children}
-    </DragDropProvider>
-  );
-}
-
-function Layout({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return <div className={cn("flex flex-col h-full", className)}>
-    {children}
-  </div>
-}
-
-function LayoutHeader({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return <nav className={cn("h-12 px-2.5 flex justify-between items-center", className)}>
-    {children}
-  </nav>
-}
-
-function LayoutHeaderButtonList({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return <ul className={cn("flex", className)}>
-    {children}
-  </ul>
-}
-
-function LayoutHeaderButtonItem({ children, className, tooltip }: PropsWithChildren<{ className?: string, tooltip?: string | React.ComponentProps<typeof TooltipContent> }>) {
-  const buttonItem = <li
-    data-slot="layout-button-item"
-    className={cn("", className)}>
-    {children}
-  </li>
-
-  if (!tooltip) {
-    return buttonItem
-  }
-
-  if (typeof tooltip === "string") {
-    tooltip = {
-      children: tooltip,
-    }
-  }
-
-  return <Tooltip>
-    <TooltipTrigger asChild>
-      {buttonItem}
-    </TooltipTrigger>
-    <TooltipContent
-      side="bottom"
-      align="center"
-      {...tooltip}
-    />
-  </Tooltip>
-}
-
-function LayoutHeaderButton({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return <Button className={cn("", className)} variant={"ghost"} size={"sm"}>
-    {children}
-  </Button>
-}
-
-function LayoutContent({ className, children }: PropsWithChildren<{ className?: string }>) {
-  return <main className={cn("flex-1 flex items-center justify-center px-2 pb-2", className)}>
-    {children}
-  </main>
-}
-
-function ResizableLayoutContent({ className, children }: PropsWithChildren<{ className?: string }>) {
-  return <div className={cn("flex flex-col h-full", className)}>
-    {children}
-  </div>
-}
-
-function Tabs({
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.Root>) {
-  return (
-    <TabsPrimitive.Root
-      data-slot="tabs"
-      className={cn("flex h-full flex-col gap-2", className)}
-      {...props}
-    />
-  )
-}
-
-function TabsList({
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.List>) {
-
-  const { ref, isDropTarget } = useDroppable({
-    id: 'droppable' + Math.random(),
-
-  });
-
-  return (
-    <TabsPrimitive.List
-      data-slot="tabs-list"
-      data-drop-target={isDropTarget ? "true" : "false"}
-      ref={ref}
-      className={cn(
-        "flex items-center gap-2 h-12 px-2.5 border-b border-border",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function TabsTrigger({
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
-  const { ref } = useDraggable({
-    id: 'draggable' + Math.random(),
-  });
-  return (
-    <TabsPrimitive.Trigger
-      data-slot="tabs-trigger"
-      ref={ref}
-      className={cn(
-        "data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring max-w-fit focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function TabsContent({
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.Content>) {
-  return (
-    <TabsPrimitive.Content
-      data-slot="tabs-content"
-      className={cn("flex-1 flex flex-col items-center justify-center px-2 pb-2",
-        className)}
-      {...props}
-    />
   )
 }
