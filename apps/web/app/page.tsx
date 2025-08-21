@@ -6,11 +6,12 @@ import { cn } from "@workspace/ui/lib/utils"
 import { ChevronLeft, ChevronRight, ListTodo, Shuffle } from "lucide-react"
 import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useId, useMemo, useState } from "react"
 import * as ResizablePrimitive from "react-resizable-panels"
-import { DragDropProvider, useDraggable, useDroppable } from "@dnd-kit/react"
+import { DndContext, useDraggable, useDroppable,  } from "@dnd-kit/core"
 import { batch, debounce, throttle } from "@tanstack/react-pacer"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
 import { useLocalStorage } from "react-use"
 import { produce } from "immer"
+import { useDndContext } from "@dnd-kit/core"
 
 // -------------------- Types --------------------
 
@@ -241,7 +242,6 @@ function LayoutProvider({ children, initialLayout }: PropsWithChildren<{ initial
     setHydration(true)
   }, [])
 
-
   const updateLayout = useCallback((id: string, value: PanelUpdateOptions) => {
     setLayout(old =>
       produce(old!, draft => {
@@ -273,23 +273,30 @@ function LayoutProvider({ children, initialLayout }: PropsWithChildren<{ initial
 
 // -------------------- Resizable Panels --------------------
 
-// className ?: string;
-// direction: Direction;
-// id ?: string | null;
 // keyboardResizeBy ?: number | null;
 // onLayout ?: PanelGroupOnLayout | null;
 // storage ?: PanelGroupStorage;
-// style ?: CSSProperties;
 // tagName ?: keyof HTMLElementTagNameMap;
 //  dir?: "auto" | "ltr" | "rtl" | undefined;
-// Better TypeScript hinting
 
 const ResizablePanelGroup = React.memo(function ResizablePanelGroup({ id, direction, children, className, ...props }: React.ComponentProps<typeof ResizablePrimitive.PanelGroup> & { id: string }) {
+  const { updateLayout, tabsMap } = useLayout();
+  const store = useMemo(() => ({
+    getItem(name: string) {
+
+    },
+    setItem(name: string, value: string) {
+    }
+  }), [id]);
+
   return (
     <ResizablePrimitive.PanelGroup
       id={id}
       data-slot="resizable-panel-group"
+      keyboardResizeBy={4}
       direction={direction}
+      // storage={store}
+      autoSaveId={id}
       className={cn("flex h-full w-full data-[panel-group-direction=vertical]:flex-col border-none data-[panel-group-direction=vertical]:border-none", className)}
       {...props}
     >
@@ -298,66 +305,28 @@ const ResizablePanelGroup = React.memo(function ResizablePanelGroup({ id, direct
   )
 })
 
-// className?: string;
-//   collapsedSize?: number | undefined;
-//   collapsible?: boolean | undefined;
-//   defaultSize?: number | undefined;
-//   id?: string;
-//   maxSize?: number | undefined;
-//   minSize?: number | undefined;
-//   onCollapse?: PanelOnCollapse;
-//   onExpand?: PanelOnExpand;
-//   onResize?: PanelOnResize;
-//   order?: number;
-//   style?: object;
-//   tagName?: T;
+const Droppable = ( {id, children, className,}: { id: string, children: React.ReactNode, className?: string }) => {
+  const { isOver, setNodeRef:ref  } = useDroppable({ id })
+  return <div className="h-full w-full">
+    <div ref={ref} className="h-full w-full">
+      {children}
+    </div>
+    <div className={cn("absolute z-100 scale-90 rounded-lg inset-0 h-full w-full pointer-events-none animation-color duration-300", isOver && "bg-blue-500/5 ring-2 ring-blue-600")}></div>
+  </div>
+}
 
 const ResizablePanel = React.memo(function ResizablePanel({ id, defaultSize, children, className, ...props }: React.ComponentProps<typeof ResizablePrimitive.Panel> & { id: string }) {
-  const { isDropTarget, ref } = useDroppable({ id })
-  const { updateLayout } = useLayout()
-
-  const debouncedResize = useMemo(() => debounce((size: number) => updateLayout(id, { size }), { wait: 500 }), [id, updateLayout])
-  const throttledResize = useMemo(
-    () => throttle((size: number) => updateLayout(id, { size }), { wait: 500 }),
-    [updateLayout]
-  )
-
-  const processBatch = batch<number>(
-    (items) => {
-      console.log('Processing batch:', items)
-    },
-    {
-      maxSize: 10,
-      wait: 2000,
-      onItemsChange: (batcher) => {
-        console.log('Current batch:', batcher.peekAllItems())
-      }
-    }
-  )
-
-  // const [mounted, setMounted] = React.useState(false)
-
-  // React.useEffect(() => {
-  //   setMounted(true)
-  // }, [])
-
-
-
 
   return (
     <ResizablePrimitive.Panel
       id={id}
       data-slot="resizable-panel"
       defaultSize={defaultSize}
-      onResize={(size: number) => updateLayout(id, { size })}
-      className={cn("relative", className)}
+      className={cn("relative h-full", className)}
       collapsible
-      collapsedSize={"36px"}
-
       {...props}
     >
       {children}
-      <div ref={ref} className={cn("h-full", isDropTarget && "bg-blue-500/5 border-2 ring-2 ring-blue-600")}></div>
     </ResizablePrimitive.Panel>
   )
 })
@@ -395,6 +364,8 @@ function LayoutRenderer() {
 const LayoutRendererInternal = React.memo(function LayoutRendererInternal({ layout }: { layout: PanelGroup | Panel }) {
   const { tabsMap } = useLayout()
 
+  const dndContext = useDndContext();
+
   if (layout.type === "panel-group") {
     return (
       <ResizablePanelGroup direction={layout.direction} id={layout.id} className="border border-border rounded-lg min-h-8 min-w-8">
@@ -411,19 +382,23 @@ const LayoutRendererInternal = React.memo(function LayoutRendererInternal({ layo
   if (layout.type === "panel") {
     if (layout.tabs) {
       return (
-        <ResizablePanel defaultSize={layout.size} id={layout.id} className="border border-border rounded-lg min-h-8 min-w-8">
-          <div className="flex flex-col h-full">{tabsMap.get(layout.tabs.id)}</div>
+        <>
+        <ResizablePanel defaultSize={layout.size} id={layout.id} className="border border-border rounded-lg min-h-8 min-w-8 relative">
+          <Droppable id={layout.id}>
+            <div className="flex flex-col h-full w-full">{tabsMap.get(layout.tabs.id)}</div>
+          </Droppable>
         </ResizablePanel>
+        </>
       )
     }
 
     if (layout.children) {
       return (
-        <ResizablePanel defaultSize={layout.size} id={layout.id}>
-          {layout.children.map(child => (
-            <LayoutRendererInternal key={child.id} layout={child} />
-          ))}
-        </ResizablePanel>
+          <ResizablePanel defaultSize={layout.size} id={layout.id}>
+            {layout.children.map(child => (
+              <LayoutRendererInternal key={child.id} layout={child} />
+            ))}
+          </ResizablePanel>
       )
     }
   }
@@ -434,7 +409,7 @@ const LayoutRendererInternal = React.memo(function LayoutRendererInternal({ layo
 // -------------------- Drag & Drop --------------------
 
 function LayoutDndProvider({ children }: PropsWithChildren) {
-  return <DragDropProvider onDragEnd={() => console.log("onDragEnd")}>{children}</DragDropProvider>
+  return <DndContext onDragEnd={() => console.log("onDragEnd")}>{children}</DndContext>
 }
 
 // -------------------- UI Wrappers --------------------
