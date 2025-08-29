@@ -6,12 +6,12 @@ import { cn } from "@workspace/ui/lib/utils"
 import { ChevronLeft, ChevronRight, ListTodo, Shuffle } from "lucide-react"
 import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useId, useMemo, useState } from "react"
 import * as ResizablePrimitive from "react-resizable-panels"
-import { DndContext, useDraggable, useDroppable,  } from "@dnd-kit/core"
-import { batch, debounce, throttle } from "@tanstack/react-pacer"
+import { useDraggable, useDroppable, DragDropProvider } from "@dnd-kit/react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
 import { useLocalStorage } from "react-use"
 import { produce } from "immer"
-import { useDndContext } from "@dnd-kit/core"
+import { useDragDropMonitor } from '@dnd-kit/react';
+
 
 // -------------------- Types --------------------
 
@@ -32,7 +32,7 @@ type BasePanel = {
 }
 
 type PanelWithChildren = { children: PanelGroup[]; tabs?: never }
-type PanelWithTabs = { tabs: Tabs; children?: never }
+type PanelWithTabs = { tabs?: Tabs; children?: never }
 
 type Panel = BasePanel & (PanelWithChildren | PanelWithTabs)
 
@@ -257,12 +257,45 @@ function LayoutProvider({ children, initialLayout }: PropsWithChildren<{ initial
     )
   }, [setLayout])
 
+  // Move tab from one panel to another
+  const moveTab = useCallback((tabId: string, fromPanelId: string, toPanelId: string) => {
+    setLayout(old =>
+      produce(old!, draft => {
+        let tabToMove: Tabs | undefined = undefined;
+        // Remove tab from source panel
+        const removeTab = (node: PanelGroup | Panel): boolean => {
+          if (node.type === "panel-group") return node.children.some(removeTab);
+          if (node.type === "panel" && node.tabs && node.tabs.id === tabId && node.id === fromPanelId) {
+            tabToMove = node.tabs;
+            node.tabs = undefined;
+            return true;
+          }
+          if (node.type === "panel" && node.children) return node.children.some(removeTab);
+          return false;
+        };
+        removeTab(draft);
+        // Add tab to target panel
+        const addTab = (node: PanelGroup | Panel): boolean => {
+          if (node.type === "panel-group") return node.children.some(addTab);
+          if (node.type === "panel" && node.id === toPanelId && !node.tabs && tabToMove) {
+            node.tabs = tabToMove;
+            return true;
+          }
+          if (node.type === "panel" && node.children) return node.children.some(addTab);
+          return false;
+        };
+        addTab(draft);
+      })
+    );
+  }, [setLayout]);
+
   if (!hydration) return null
   return (
     <LayoutContext.Provider value={{ layout: layout!, tabsMap, updateLayout }}>
-      <LayoutDndProvider>
+      {/* @ts-expect-error: moveTab prop is injected for DnD logic */}
+      <LayoutDndProvider moveTab={moveTab}>
         <TooltipProvider delayDuration={0}>
-          <div data-slot="layout-wrapper" className="h-full">
+          <div data-slot="layout-wrapper" className="h-full w-full">
             {children}
           </div>
         </TooltipProvider>
@@ -305,18 +338,17 @@ const ResizablePanelGroup = React.memo(function ResizablePanelGroup({ id, direct
   )
 })
 
-const Droppable = ( {id, children, className,}: { id: string, children: React.ReactNode, className?: string }) => {
-  const { isOver, setNodeRef:ref  } = useDroppable({ id })
+const Droppable = ({ id, children, className, }: { id: string, children: React.ReactNode, className?: string }) => {
+  const { ref, isDropTarget } = useDroppable({ id })
   return <div className="h-full w-full">
     <div ref={ref} className="h-full w-full">
       {children}
     </div>
-    <div className={cn("absolute z-100 scale-90 rounded-lg inset-0 h-full w-full pointer-events-none animation-color duration-300", isOver && "bg-blue-500/5 ring-2 ring-blue-600")}></div>
+    <div className={cn("absolute z-100 scale-90 rounded-lg inset-0 h-full w-full pointer-events-none animation-color duration-300", isDropTarget && "bg-blue-500/5 ring-2 ring-blue-600")}></div>
   </div>
 }
 
 const ResizablePanel = React.memo(function ResizablePanel({ id, defaultSize, children, className, ...props }: React.ComponentProps<typeof ResizablePrimitive.Panel> & { id: string }) {
-
   return (
     <ResizablePrimitive.Panel
       id={id}
@@ -363,8 +395,12 @@ function LayoutRenderer() {
 
 const LayoutRendererInternal = React.memo(function LayoutRendererInternal({ layout }: { layout: PanelGroup | Panel }) {
   const { tabsMap } = useLayout()
+  useDragDropMonitor({
+    onCollision(event, manager) {
 
-  const dndContext = useDndContext();
+    }
+  });
+
 
   if (layout.type === "panel-group") {
     return (
@@ -383,22 +419,22 @@ const LayoutRendererInternal = React.memo(function LayoutRendererInternal({ layo
     if (layout.tabs) {
       return (
         <>
-        <ResizablePanel defaultSize={layout.size} id={layout.id} className="border border-border rounded-lg min-h-8 min-w-8 relative">
-          <Droppable id={layout.id}>
-            <div className="flex flex-col h-full w-full">{tabsMap.get(layout.tabs.id)}</div>
-          </Droppable>
-        </ResizablePanel>
+          <ResizablePanel defaultSize={layout.size} id={layout.id} className="border-2 border-blue-400 rounded-lg min-h-8 min-w-8 relative">
+            <Droppable id={layout.id}>
+              <div className="flex flex-col h-full w-full ">{tabsMap.get(layout.tabs.id)}</div>
+            </Droppable>
+          </ResizablePanel>
         </>
       )
     }
 
     if (layout.children) {
       return (
-          <ResizablePanel defaultSize={layout.size} id={layout.id}>
-            {layout.children.map(child => (
-              <LayoutRendererInternal key={child.id} layout={child} />
-            ))}
-          </ResizablePanel>
+        <ResizablePanel defaultSize={layout.size} id={layout.id}>
+          {layout.children.map(child => (
+            <LayoutRendererInternal key={child.id} layout={child} />
+          ))}
+        </ResizablePanel>
       )
     }
   }
@@ -409,42 +445,7 @@ const LayoutRendererInternal = React.memo(function LayoutRendererInternal({ layo
 // -------------------- Drag & Drop --------------------
 
 function LayoutDndProvider({ children }: PropsWithChildren) {
-  return <DndContext onDragEnd={() => console.log("onDragEnd")}>{children}</DndContext>
-}
-
-// -------------------- UI Wrappers --------------------
-
-function Layout({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return <div className={cn("flex flex-col h-full", className)}>{children}</div>
-}
-
-function LayoutHeader({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return <nav className={cn("h-12 px-2.5 flex justify-between items-center", className)}>{children}</nav>
-}
-
-function LayoutHeaderButtonList({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return <ul className={cn("flex", className)}>{children}</ul>
-}
-
-function LayoutHeaderButtonItem({ children, className, tooltip }: PropsWithChildren<{ className?: string; tooltip?: string | React.ComponentProps<typeof TooltipContent> }>) {
-  const content = <li data-slot="layout-button-item" className={cn("", className)}>{children}</li>
-  if (!tooltip) return content
-
-  const tooltipProps = typeof tooltip === "string" ? { children: tooltip } : tooltip
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{content}</TooltipTrigger>
-      <TooltipContent side="bottom" align="center" {...tooltipProps} />
-    </Tooltip>
-  )
-}
-
-function LayoutHeaderButton({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return <Button className={cn("", className)} variant="ghost" size="sm">{children}</Button>
-}
-
-function LayoutContent({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return <main className={cn("flex-1 flex items-center justify-center px-2 pb-2", className)}>{children}</main>
+  return <DragDropProvider onDragEnd={() => console.log("onDragEnd")}>{children}</DragDropProvider>
 }
 
 // -------------------- Tabs --------------------
@@ -509,82 +510,53 @@ function TabsContent({
 
 // -------------------- Export Page --------------------
 
+const buttonList = [
+  { icon: <ListTodo />, tooltip: "Problems List", text: "Problems List" },
+  { icon: <ChevronLeft />, tooltip: "Go Back" },
+  { icon: <ChevronRight />, tooltip: "Go Forward" },
+  { icon: <Shuffle />, tooltip: "Shuffle" },
+]
+
 export default function Page() {
   return (
-    <LayoutProvider initialLayout={layoutItem}>
-      <Layout>
-        <LayoutHeader>
-          <LayoutHeaderButtonList>
-            <LayoutHeaderButtonItem tooltip={"Problems List"}>
-              <LayoutHeaderButton>
-                <ListTodo /> Problems List
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <ChevronLeft />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <ChevronRight />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <Shuffle />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-          </LayoutHeaderButtonList>
-          <LayoutHeaderButtonList>
-            <LayoutHeaderButtonItem tooltip={"Problems List"}>
-              <LayoutHeaderButton>
-                <ListTodo />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <ChevronLeft />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <ChevronRight />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <Shuffle />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-          </LayoutHeaderButtonList>
-          <LayoutHeaderButtonList>
-            <LayoutHeaderButtonItem tooltip={"Problems List"}>
-              <LayoutHeaderButton>
-                <ListTodo />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <ChevronLeft />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <ChevronRight />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-            <LayoutHeaderButtonItem>
-              <LayoutHeaderButton>
-                <Shuffle />
-              </LayoutHeaderButton>
-            </LayoutHeaderButtonItem>
-          </LayoutHeaderButtonList>
-        </LayoutHeader>
-        <LayoutContent>
+    <div className={cn("flex flex-col h-full")}>
+      <nav className={cn("h-12 px-2.5 flex justify-between items-center")}>
+        <ul className={cn("flex")}>
+          {buttonList.map(({ icon, tooltip, text }, idx) => (
+            <li key={idx} className={"flex items-center gap-2"}>
+              <Tooltip>
+                <TooltipTrigger asChild><Button className={cn("")} variant="ghost" size="sm">{icon} {text ? text : ""}</Button></TooltipTrigger>
+                <TooltipContent side="bottom" align="center">{tooltip}</TooltipContent>
+              </Tooltip>
+            </li>
+          ))}
+        </ul>
+        <ul className={cn("flex")}>
+          {buttonList.map(({ icon, tooltip, text }, idx) => (
+            <li key={idx} className={"flex items-center gap-2"}>
+              <Tooltip>
+                <TooltipTrigger asChild><Button className={cn("")} variant="ghost" size="sm">{icon} {text ? text : ""}</Button></TooltipTrigger>
+                <TooltipContent side="bottom" align="center">{tooltip}</TooltipContent>
+              </Tooltip>
+            </li>
+          ))}
+        </ul>
+        <ul className={cn("flex")}>
+          {buttonList.map(({ icon, tooltip, text }, idx) => (
+            <li key={idx} className={"flex items-center gap-2"}>
+              <Tooltip>
+                <TooltipTrigger asChild><Button className={cn("")} variant="ghost" size="sm">{icon} {text ? text : ""}</Button></TooltipTrigger>
+                <TooltipContent side="bottom" align="center">{tooltip}</TooltipContent>
+              </Tooltip>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <main className={cn("flex h-full w-full items-center justify-center px-2 pb-2",)}>
+        <LayoutProvider initialLayout={layoutItem}>
           <LayoutRenderer />
-        </LayoutContent>
-      </Layout>
-    </LayoutProvider>
+        </LayoutProvider>
+      </main>
+    </div>
   )
 }
