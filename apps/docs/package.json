@@ -3,7 +3,8 @@
   "version": "0.1.3",
   "private": true,
   "scripts": {
-    "build": "pnpm build:pre && next build && pnpm build:post",
+    "build": "next build",
+    "build-1": "pnpm build:pre && next build && pnpm build:post",
     "build:pre": "bun ./scripts/pre-build.ts",
     "build:post": "bun ./scripts/post-build.ts",
     "clean": "rimraf .next",
