@@ -1,18 +1,15 @@
 import "@/app/global.css";
 import type { Viewport } from "next";
-import { baseUrl, createMetadata } from "@/lib/metadata";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { RootProvider } from "fumadocs-ui/provider/next";
 
-export const metadata = createMetadata({
+export const metadata = {
   title: {
     template: "%s | Fumadocs",
     default: "Fumadocs",
   },
-  description: "The Next.js framework for building documentation sites",
-  metadataBase: baseUrl,
-});
+};
 
 const geist = Geist({
   variable: "--font-sans",
