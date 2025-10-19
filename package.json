@@ -10,9 +10,13 @@
     "format": "biome format --write"
   },
   "dependencies": {
+    "@types/mdx": "^2.0.13",
+    "fumadocs-core": "^15.8.5",
+    "fumadocs-mdx": "^12.0.3",
+    "fumadocs-ui": "^15.8.5",
+    "next": "16.0.0-beta.0",
     "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "next": "16.0.0-beta.0"
+    "react-dom": "19.1.0"
   },
   "devDependencies": {
     "babel-plugin-react-compiler": "1.0.0",
